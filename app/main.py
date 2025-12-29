@@ -40,9 +40,9 @@ def get_events():
 
     return result
 
-# Adding an endpoint to create a new event
 from fastapi import HTTPException
 
+# POST endpoint to create a new event
 @app.post("/events")
 def create_event(event: dict):
     conn = get_connection()
@@ -76,4 +76,109 @@ def create_event(event: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000) 
+
+# CORRESPONDENT ENDPOINTS
+@app.get("/correspondents")
+def get_correspondents():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM correspondent;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    result = []
+    for row in rows:
+        result.append({
+            "id": row[0],
+            "name": row[1],
+            "country": row[2],
+            "city": row[3],
+            "specification": row[4],
+            "operator": row[5],
+            "price": float(row[6])
+        })
+    return result
+
+@app.post("/correspondents")
+def create_correspondent(correspondent: dict):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO correspondent (id, name, country, city, specification, operator, price)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+            """,
+            (
+                correspondent["id"],
+                correspondent["name"],
+                correspondent["country"],
+                correspondent["city"],
+                correspondent["specification"],
+                correspondent["operator"],
+                correspondent["price"]
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+    return {"status": "created"}
+
+
+# REPORT ENDPOINTS
+@app.get("/reportages")
+def get_reportages():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM reportage;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    result = []
+    for row in rows:
+        result.append({
+            "id": row[0],
+            "date": row[1],
+            "quality": row[2],
+            "time": str(row[3]),
+            "video": row[4],
+            "event_id": row[5],
+            "correspondent_id": row[6]
+        })
+    return result
+
+@app.post("/reportages")
+def create_reportage(reportage: dict):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO reportage (id, date, quality, time, video, event_id, correspondent_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+            """,
+            (
+                reportage["id"],
+                reportage["date"],
+                reportage["quality"],
+                reportage["time"],
+                reportage["video"],
+                reportage["event_id"],
+                reportage["correspondent_id"]
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+    return {"status": "created"}

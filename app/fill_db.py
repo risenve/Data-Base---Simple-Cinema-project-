@@ -75,5 +75,6 @@ reportages = [
 ]
 
 for r in reportages:
-    response = requests.post(f"{BASE_URL}/reportages", json=r)
-    print(response.json())
+    response = requests.post(f"{BASE_URL}/events", json=event)
+    print("STATUS:", response.status_code)
+    print("TEXT:", response.text)

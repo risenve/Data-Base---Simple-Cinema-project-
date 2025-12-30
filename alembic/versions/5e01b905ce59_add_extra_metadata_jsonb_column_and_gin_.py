@@ -1,30 +1,30 @@
+
 """Add extra_metadata JSONB column and GIN index to events
 
 Revision ID: 5e01b905ce59
-Revises: d79bc3da18de
-Create Date: 2025-12-31 03:39:04.424608
+Revises: d79bc3da18de  # <-- ID предыдущей миграции
+Create Date: 2024-01-15 10:30:00.000000
 
 """
-from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
+revision = '5e01b905ce59'
+down_revision = 'd79bc3da18de'
+branch_labels = None
+depends_on = None
 
-# revision identifiers, used by Alembic.
-revision: str = '5e01b905ce59'
-down_revision: Union[str, Sequence[str], None] = 'd79bc3da18de'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+def upgrade():
+    op.add_column('events', sa.Column('extra_metadata', sa.JSON(), nullable=True))
+    
+    
+    op.execute("""
+        CREATE INDEX ix_events_extra_metadata_gin 
+        ON events 
+        USING gin ((extra_metadata::text) gin_trgm_ops)
+    """)
 
-
-def upgrade() -> None:
-    """Upgrade schema."""
-
-    op.add_column('events', sa.Column('extra_metadata', postgresql.JSONB(), nullable=True))
-    op.create_index('ix_events_extra_metadata', 'events', ['extra_metadata'], postgresql_using='gin')
-
-def downgrade() -> None:
-    """Downgrade schema."""
+def downgrade():
     op.drop_index('ix_events_extra_metadata_gin', table_name='events')
     op.drop_column('events', 'extra_metadata')

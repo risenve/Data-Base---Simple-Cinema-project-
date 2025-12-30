@@ -23,7 +23,9 @@ events = [
 
 for event in events:
     response = requests.post(f"{BASE_URL}/events", json=event)
-    print(response.json())
+    print("STATUS:", response.status_code)
+    print("TEXT:", response.text)
+
 # adding correspondents 
 correspondents = [
     {
@@ -46,7 +48,8 @@ correspondents = [
 
 for c in correspondents:
     response = requests.post(f"{BASE_URL}/correspondents", json=c)
-    print(response.json())
+    print("STATUS:", response.status_code)
+    print("TEXT:", response.text)
 
 # adding reportages
 reportages = [

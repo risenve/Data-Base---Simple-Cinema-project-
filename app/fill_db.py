@@ -4,7 +4,6 @@ BASE_URL = "http://127.0.0.1:8000"
 # adding events
 events = [
     {
-        "id": 1,
         "place": "Central Square",
         "city": "Yerevan",
         "date": "2024-10-12",
@@ -13,7 +12,6 @@ events = [
         "type": "protest"
     },
     {
-        "id": 2,
         "place": "Opera Theater",
         "city": "Yerevan",
         "date": "2024-10-13",
@@ -29,7 +27,6 @@ for event in events:
 # adding correspondents 
 correspondents = [
     {
-        "id": 1,
         "name": "Anna Smith",
         "country": "Armenia",
         "city": "Yerevan",
@@ -38,7 +35,6 @@ correspondents = [
         "price": 150.0
     },
     {
-        "id": 2,
         "name": "John Doe",
         "country": "Armenia",
         "city": "Gyumri",
@@ -55,7 +51,6 @@ for c in correspondents:
 # adding reportages
 reportages = [
     {
-        "id": 1,
         "date": "2024-10-12",
         "quality": "HD",
         "time": "18:30",
@@ -64,7 +59,6 @@ reportages = [
         "correspondent_id": 1
     },
     {
-        "id": 2,
         "date": "2024-10-13",
         "quality": "FullHD",
         "time": "20:00",

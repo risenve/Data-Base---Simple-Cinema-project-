@@ -1,22 +1,70 @@
-from sqlalchemy import Column, Integer, String, Date
-from sqlalchemy.orm import relationship
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+from app.database import SessionLocal
+from app import models, schemas
 
-from app.database import Base
+router = APIRouter(prefix="/events", tags=["events"])
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-class Event(Base):
-    __tablename__ = "events"
+# CREATE
+@router.post("/", response_model=schemas.EventResponse)
+def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
+    db_event = models.Event(**event.dict())
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event
 
-    id = Column(Integer, primary_key=True, index=True)
-    place = Column(String(100), nullable=False)
-    city = Column(String(100), nullable=False, index=True)
-    date = Column(Date, nullable=False)
-    duration = Column(Integer, nullable=False)
-    danger = Column(String(50), nullable=False)
-    type = Column(String(100), nullable=False)
+# READ ALL 
+@router.get("/", response_model=List[schemas.EventResponse])
+def read_events(
+    skip: int = 0, 
+    limit: int = 100,  
+    db: Session = Depends(get_db)
+):
+    events = db.query(models.Event).offset(skip).limit(limit).all()
+    return events
 
-    reportages = relationship(
-        "Reportage",
-        back_populates="event",
-        cascade="all, delete",
-    )
+# READ ONE
+@router.get("/{event_id}", response_model=schemas.EventResponse)
+def read_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
+# UPDATE
+@router.put("/{event_id}", response_model=schemas.EventResponse)
+def update_event(
+    event_id: int, 
+    event_update: schemas.EventCreate, 
+    db: Session = Depends(get_db)
+):
+    db_event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    for field, value in event_update.dict().items():
+        setattr(db_event, field, value)
+    
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+# DELETE
+@router.delete("/{event_id}")
+def delete_event(event_id: int, db: Session = Depends(get_db)):
+    db_event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db.delete(db_event)
+    db.commit()
+    return {"message": "Event deleted"}

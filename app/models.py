@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Date, Time, Boolean, Numeric, Fo
 from sqlalchemy.orm import relationship
 from app.database import Base
 
+from sqlalchemy.dialects.postgresql import JSONB
+
 class Event(Base):
     __tablename__ = "events"
     id = Column(Integer, primary_key=True, index=True)
@@ -11,6 +13,7 @@ class Event(Base):
     duration = Column(Integer)
     danger = Column(String(50))
     type = Column(String(100))
+    extra_metadata = Column(JSONB, nullable=True) 
     # Связь для репортажей
     reportages = relationship("Reportage", back_populates="event")
 

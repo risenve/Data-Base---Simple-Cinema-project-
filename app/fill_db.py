@@ -2,7 +2,6 @@ import requests
 
 BASE_URL = "http://127.0.0.1:8000"
 
-# EVENTS
 events = [
     {"place": "Central Square", "city": "Yerevan", "date": "2024-10-12", "duration": 120, "danger": "low", "type": "protest"},
     {"place": "Opera Theater", "city": "Yerevan", "date": "2024-10-13", "duration": 90, "danger": "medium", "type": "concert"}
@@ -13,7 +12,6 @@ for e in events:
     print("STATUS:", r.status_code)
     print("TEXT:", r.text)
 
-# CORRESPONDENTS
 correspondents = [
     {"name": "Anna Smith", "country": "Armenia", "city": "Yerevan", "specification": "war", "operator": True, "price": 150.0},
     {"name": "John Doe", "country": "Armenia", "city": "Gyumri", "specification": "politics", "operator": False, "price": 100.0}
@@ -24,13 +22,12 @@ for c in correspondents:
     print("STATUS:", r.status_code)
     print("TEXT:", r.text)
 
-# REPORTAGES
 reportages = [
     {"date": "2024-10-12", "quality": "HD", "time": "18:30", "video": True, "event_id": 1, "correspondent_id": 1},
     {"date": "2024-10-13", "quality": "FullHD", "time": "20:00", "video": True, "event_id": 2, "correspondent_id": 2}
 ]
 
-for r_data in reportages:
-    r = requests.post(f"{BASE_URL}/reportages", json=r_data)
-    print("STATUS:", r.status_code)
-    print("TEXT:", r.text)
+for r in reportages:
+    resp = requests.post(f"{BASE_URL}/reportages", json=r)  # ✅ правильно
+    print("STATUS:", resp.status_code)
+    print("TEXT:", resp.text)

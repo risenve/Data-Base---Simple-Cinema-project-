@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, Dict, Any, List
-from datetime import time
+from pydantic import BaseModel, ConfigDict, field_validator
+from typing import Optional, Dict, Any
 import json
 
 class EventCreate(BaseModel):
@@ -16,7 +15,6 @@ class EventCreate(BaseModel):
     
     def dict(self, **kwargs):
         data = super().dict(**kwargs)
-        # Конвертируем dict в JSON строку для SQLAlchemy
         if data.get('extra_metadata'):
             data['extra_metadata'] = json.dumps(data['extra_metadata'])
         return data
@@ -32,6 +30,16 @@ class EventResponse(BaseModel):
     extra_metadata: Optional[Dict[str, Any]] = None
     
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('extra_metadata', mode='before')
+    @classmethod
+    def parse_json(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return None
+        return v
 
 class CorrespondentCreate(BaseModel):
     name: str

@@ -1,8 +1,8 @@
-"""Add extra_metadata with simple index
+"""add_indexes_for_search
 
-Revision ID: 282101822177
-Revises: 5e01b905ce59
-Create Date: 2025-12-31 13:10:41.781953
+Revision ID: 4c087ffb4360
+Revises: 4fa454f951ac
+Create Date: 2025-12-31 15:53:59.239253
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '282101822177'
-down_revision: Union[str, Sequence[str], None] = '5e01b905ce59'
+revision: str = '4c087ffb4360'
+down_revision: Union[str, Sequence[str], None] = '4fa454f951ac'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import json
 from app.database import SessionLocal
 from app import models, schemas
 
@@ -13,7 +14,6 @@ def get_db():
     finally:
         db.close()
 
-
 # CREATE
 @router.post("/", response_model=schemas.EventResponse)
 def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
@@ -22,11 +22,16 @@ def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_event)
     
-    # data to string
     response_data = db_event.__dict__.copy()
     response_data['date'] = str(db_event.date) if db_event.date else None
+    
+    if response_data.get('extra_metadata') and isinstance(response_data['extra_metadata'], str):
+        try:
+            response_data['extra_metadata'] = json.loads(response_data['extra_metadata'])
+        except:
+            response_data['extra_metadata'] = None
+    
     return response_data
-
 
 # READ ALL 
 @router.get("/", response_model=List[schemas.EventResponse])
@@ -37,15 +42,20 @@ def read_events(
 ):
     events = db.query(models.Event).offset(skip).limit(limit).all()
     
-    # conv data to string
     result = []
     for event in events:
         event_dict = event.__dict__.copy()
         event_dict['date'] = str(event.date) if event.date else None
+        
+        if event_dict.get('extra_metadata') and isinstance(event_dict['extra_metadata'], str):
+            try:
+                event_dict['extra_metadata'] = json.loads(event_dict['extra_metadata'])
+            except:
+                event_dict['extra_metadata'] = None
+        
         result.append(event_dict)
     
     return result
-
 
 # READ ONE
 @router.get("/{event_id}", response_model=schemas.EventResponse)
@@ -54,11 +64,16 @@ def read_event(event_id: int, db: Session = Depends(get_db)):
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     
-    #conv data to string 
     event_dict = event.__dict__.copy()
     event_dict['date'] = str(event.date) if event.date else None
+    
+    if event_dict.get('extra_metadata') and isinstance(event_dict['extra_metadata'], str):
+        try:
+            event_dict['extra_metadata'] = json.loads(event_dict['extra_metadata'])
+        except:
+            event_dict['extra_metadata'] = None
+    
     return event_dict
-
 
 # UPDATE
 @router.put("/{event_id}", response_model=schemas.EventResponse)
@@ -77,11 +92,17 @@ def update_event(
     db.commit()
     db.refresh(db_event)
     
-    # сonv date to striiing
     response_data = db_event.__dict__.copy()
     response_data['date'] = str(db_event.date) if db_event.date else None
-    return response_data
+    
 
+    if response_data.get('extra_metadata') and isinstance(response_data['extra_metadata'], str):
+        try:
+            response_data['extra_metadata'] = json.loads(response_data['extra_metadata'])
+        except:
+            response_data['extra_metadata'] = None
+    
+    return response_data
 
 # DELETE
 @router.delete("/{event_id}")

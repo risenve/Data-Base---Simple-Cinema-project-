@@ -103,7 +103,8 @@ def main():
     
     print(f"\nCreated {len(event_ids)} events and {len(correspondent_ids)} correspondents")
     
-    
+    created_reportages = 0
+
     if event_ids and correspondent_ids:
         reportage_count = min(30, len(event_ids) * len(correspondent_ids))
         print(f"Creating {reportage_count} reportages...")

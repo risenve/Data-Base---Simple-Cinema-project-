@@ -2,8 +2,7 @@ import requests
 import random
 from datetime import datetime, timedelta
 
-
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://localhost:8000"
 
 cities = ["Yerevan", "Gyumri", "Vanadzor", "Dilijan", "Ashtarak"]
 places = ["Central Square", "Opera Theater", "Republic Square", "Cascade", "Sports Complex"]
@@ -29,10 +28,10 @@ def create_event():
     }
     
     response = requests.post(f"{BASE_URL}/events/", json=event_data)
-    if response.status_code == 201 or response.status_code == 200:
+    if response.status_code in [200, 201]:
         return response.json()["id"]
     else:
-        print(f"Error creating event: {response.text}")
+        print(f"Error creating event: {response.status_code} - {response.text[:100]}")
         return None
 
 def create_correspondent():
@@ -50,10 +49,10 @@ def create_correspondent():
     }
     
     response = requests.post(f"{BASE_URL}/correspondents/", json=correspondent_data)
-    if response.status_code == 201 or response.status_code == 200:
+    if response.status_code in [200, 201]:
         return response.json()["id"]
     else:
-        print(f"Error creating correspondent: {response.text}")
+        print(f"Error creating correspondent: {response.status_code} - {response.text[:100]}")
         return None
 
 def create_reportage(event_id, correspondent_id):
@@ -68,41 +67,55 @@ def create_reportage(event_id, correspondent_id):
     }
     
     response = requests.post(f"{BASE_URL}/reportages/", json=reportage_data)
-    if response.status_code == 201 or response.status_code == 200:
+    if response.status_code in [200, 201]:
         return response.json()["id"]
     else:
-        print(f"Error creating reportage: {response.text}")
+        print(f"Error creating reportage: {response.status_code} - {response.text[:200]}")
         return None
 
 def main():
     print("Starting to fill database with sample data...")
     
-    # creating 20 events
+    # 20 events 
     event_ids = []
     for i in range(20):
         print(f"Creating event {i+1}/20...")
         event_id = create_event()
         if event_id:
             event_ids.append(event_id)
+        else:
+            print("  Skipping...")
     
-    # creating 15 correspondents
+    # 15 correspondents
     correspondent_ids = []
     for i in range(15):
         print(f"Creating correspondent {i+1}/15...")
         correspondent_id = create_correspondent()
         if correspondent_id:
             correspondent_ids.append(correspondent_id)
+        else:
+            print("  Skipping...")
     
-    # creating 30 reportages (with refereces)
-    for i in range(30):
-        print(f"Creating reportage {i+1}/30...")
-        if event_ids and correspondent_ids:
+    print(f"\nCreated {len(event_ids)} events and {len(correspondent_ids)} correspondents")
+    
+    
+    if event_ids and correspondent_ids:
+        reportage_count = min(30, len(event_ids) * len(correspondent_ids))
+        print(f"Creating {reportage_count} reportages...")
+        
+        created_reportages = 0
+        for i in range(reportage_count):
+            print(f"Creating reportage {i+1}/{reportage_count}...")
             event_id = random.choice(event_ids)
             correspondent_id = random.choice(correspondent_ids)
-            create_reportage(event_id, correspondent_id)
+            
+            if create_reportage(event_id, correspondent_id):
+                created_reportages += 1
+    else:
+        print("Cannot create reportages - missing events or correspondents")
     
-    print("\n Database filling completed!")
-    print(f"Created: {len(event_ids)} events, {len(correspondent_ids)} correspondents, 30 reportages")
+    print(f"\n✅ Database filling completed!")
+    print(f"Created: {len(event_ids)} events, {len(correspondent_ids)} correspondents, {created_reportages} reportages")
     print(f"API available at: {BASE_URL}/docs")
 
 if __name__ == "__main__":

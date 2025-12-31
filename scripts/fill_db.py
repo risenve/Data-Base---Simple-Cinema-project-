@@ -2,7 +2,12 @@ import requests
 import random
 from datetime import datetime, timedelta
 
-BASE_URL = "http://localhost:8000"
+import os
+from dotenv import load_dotenv
+
+
+API_PORT = os.environ.get("API_PORT", "8000")
+BASE_URL = f"http://localhost:{API_PORT}"
 
 cities = ["Yerevan", "Gyumri", "Vanadzor", "Dilijan", "Ashtarak"]
 places = ["Central Square", "Opera Theater", "Republic Square", "Cascade", "Sports Complex"]

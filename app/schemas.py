@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, Dict, Any, List
 from datetime import time
+import json
 
 class EventCreate(BaseModel):
     place: str
@@ -10,6 +11,27 @@ class EventCreate(BaseModel):
     danger: str
     type: str
     extra_metadata: Optional[Dict[str, Any]] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    def dict(self, **kwargs):
+        data = super().dict(**kwargs)
+        # Конвертируем dict в JSON строку для SQLAlchemy
+        if data.get('extra_metadata'):
+            data['extra_metadata'] = json.dumps(data['extra_metadata'])
+        return data
+
+class EventResponse(BaseModel):
+    id: int
+    place: str
+    city: str
+    date: str
+    duration: int
+    danger: str
+    type: str
+    extra_metadata: Optional[Dict[str, Any]] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class CorrespondentCreate(BaseModel):
     name: str
@@ -18,6 +40,11 @@ class CorrespondentCreate(BaseModel):
     specification: str
     operator: bool
     price: float
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class CorrespondentResponse(CorrespondentCreate):
+    id: int
 
 class ReportageCreate(BaseModel):
     date: str
@@ -26,21 +53,8 @@ class ReportageCreate(BaseModel):
     video: bool
     event_id: int
     correspondent_id: int
-
-class EventResponse(EventCreate):
-    id: int
     
-    class Config:
-        from_attributes = True
-
-class CorrespondentResponse(CorrespondentCreate):
-    id: int
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReportageResponse(ReportageCreate):
     id: int
-    
-    class Config:
-        from_attributes = True

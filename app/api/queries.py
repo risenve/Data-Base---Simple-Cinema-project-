@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy import func, text
 from typing import List, Optional
 from app.database import SessionLocal
 from app import models, schemas
@@ -71,7 +71,7 @@ def get_reportages_with_details(
 @router.put("/increase_operator_prices")
 def increase_operator_prices(
     percentage: float = Query(10.0, ge=0.0, le=100.0, description="Percentage increase"),
-    min_price: Optional[float] = Query(100.0, description="Minimum current price to update"),
+    min_price: Optional[float] = Query(None, description="Minimum current price to update"),
     db: Session = Depends(get_db)
 ):
     """UPDATE correspondent SET price = price * (1 + ?/100) WHERE operator = TRUE AND price >= ?"""
@@ -88,7 +88,9 @@ def increase_operator_prices(
     updated_count = 0
     
     for corr in correspondents:
-        corr.price = round(corr.price * multiplier, 2)
+        
+        current_price = float(corr.price) if corr.price else 0.0
+        corr.price = round(current_price * multiplier, 2)
         updated_count += 1
     
     db.commit()
@@ -142,7 +144,7 @@ def get_sorted_events(
     elif sort_by == "city":
         sort_field = models.Event.city
     else:
-        sort_field = models.Event.date  # default
+        sort_field = models.Event.date 
     
     if order.lower() == "asc":
         query = db.query(models.Event).order_by(sort_field.asc())
@@ -152,17 +154,119 @@ def get_sorted_events(
     return query.limit(limit).all()
 
 
+# 6. Full-text search in JSON field
+@router.get("/fulltext_search_events")
+def fulltext_search_events(
+    q: str = Query(..., description="Search query for extra_metadata"),
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    """Full-text search in extra_metadata JSON field using ilike"""
+    try:
+        if not q.strip() or len(q.strip()) < 2:
+            raise HTTPException(
+                status_code=400, 
+                detail="Search query must be at least 2 characters"
+            )
+        
+        results = db.query(models.Event).filter(
+            models.Event.extra_metadata.cast(text).ilike(f'%{q}%')
+        ).offset(offset).limit(limit).all()
+        
+        total = db.query(models.Event).filter(
+            models.Event.extra_metadata.cast(text).ilike(f'%{q}%')
+        ).count()
+        
+        return {
+            "results": results,
+            "total": total,
+            "query": q,
+            "offset": offset,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Search error: {str(e)}"
+        )
+
+
+# 7. Regex search in JSON field
+@router.get("/regex_search_events")
+def regex_search_events(
+    pattern: str = Query(..., description="PostgreSQL regex pattern"),
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    """Search in extra_metadata using PostgreSQL regex patterns"""
+    try:
+        if not pattern.strip():
+            raise HTTPException(
+                status_code=400, 
+                detail="Pattern cannot be empty"
+            )
+        
+        if len(pattern) > 500:
+            raise HTTPException(
+                status_code=400, 
+                detail="Pattern too long (max 500 characters)"
+            )
+        
+        results = db.query(models.Event).filter(
+            models.Event.extra_metadata.cast(text).op("~")(pattern)
+        ).offset(offset).limit(limit).all()
+        
+        total = db.query(models.Event).filter(
+            models.Event.extra_metadata.cast(text).op("~")(pattern)
+        ).count()
+        
+        return {
+            "results": results,
+            "total": total,
+            "pattern": pattern,
+            "offset": offset,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid regular expression" in error_msg.lower():
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid regex pattern: {error_msg}"
+            )
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Regex search error: {error_msg}"
+        )
+
+
+# 8. Case-insensitive regex search 
 @router.get("/search_events_json")
 def search_events_json(
-    q: str = Query(..., description="Regex pattern to search in extra_metadata"),
+    q: str = Query(..., description="Case-insensitive regex pattern to search in extra_metadata"),
     limit: int = Query(20, le=100),
     db: Session = Depends(get_db)
 ):
-    """Full-text search in extra_metadata JSON field using regex"""
-    from sqlalchemy import text
-    
-    results = db.query(models.Event).filter(
-        models.Event.extra_metadata.cast(text).op("~*")(q)
-    ).limit(limit).all()
-    
-    return results
+    """Full-text search in extra_metadata JSON field using case-insensitive regex"""
+    try:
+        results = db.query(models.Event).filter(
+            models.Event.extra_metadata.cast(text).op("~*")(q)
+        ).limit(limit).all()
+        
+        return results
+        
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid regular expression" in error_msg.lower():
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid regex pattern: {error_msg}"
+            )
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Search error: {error_msg}"
+        )
